@@ -1,15 +1,15 @@
 # DATA514_Aribnb
 
-#Q1 AirBnB search: Display list of stays in Portland, OR with details: name, #neighbourhood, room type, how many guests it accommodates, property type and #amenities, per night’s cost and is available for the next two days in descending #order of rating. 
+# Q1 AirBnB search: Display list of stays in Portland, OR with details: name, #neighbourhood, room type, how many guests it accommodates, property type and amenities, per night’s cost and is available for the next two days in descending #order of rating. 
 
-#Q2 Are there any neighbourhoods in any of the cities that don’t have any #listings?
+# Q2 Are there any neighbourhoods in any of the cities that don’t have any #listings?
 
-#Q3 Availability for booking: For “Entire home/apt” type listings in Salem #provide it’s availability estimate for each month – which chunks of time are #bookable? Display listing’s name, whether it’s Entire home/apt, month, #availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
+# Q3 Availability for booking: For “Entire home/apt” type listings in Salem #provide it’s availability estimate for each month – which chunks of time are bookable? Display listing’s name, whether it’s Entire home/apt, month, #availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
 
 
-#Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in #Portland provide it’s availability estimate for each month of Spring and Winter #this year.
+# Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in #Portland provide it’s availability estimate for each month of Spring and Winter this year.
 
-#Q5 Booking Trend: For each city, how many reviews are received for December of #each year?
+# Q5 Booking Trend: For each city, how many reviews are received for December of #each year?
 ```
 db.reviews.aggregate([
   {
@@ -54,7 +54,7 @@ db.reviews.aggregate([
   }
 ])
 ```
-#Q6 Reminder to Book again: Are there any listings that have received more than #three reviews from the same reviewer within a month? Additionally, are there any #other listings by the same host that can be suggested? If so, please display the #listing's name, URL, description, host's name, reviewer's name, whether it was #previously booked, availability days, minimum nights for booking, and maximum #nights for booking. (Slightly modified from the actual query)
+# Q6 Reminder to Book again: Are there any listings that have received more than #three reviews from the same reviewer within a month? Additionally, are there any other listings by the same host that can be suggested? If so, please display the #listing's name, URL, description, host's name, reviewer's name, whether it was previously booked, availability days, minimum nights for booking, and maximum #nights for booking. (Slightly modified from the actual query)
 ```
 db.reviews.aggregate([
   {
@@ -138,9 +138,8 @@ db.reviews.aggregate([
 ])
 ```
 
-#We’ve identified 2 other questions we would like to add. They are as follows:
-
-#Q7 Hosts with the Most Listings:Display the list of hosts with the most number #of listings.
+# We’ve identified 2 other questions we would like to add. They are as follows:
+# Q7 Hosts with the Most Listings:Display the list of hosts with the most number #of listings.
 ```
 [
   {
@@ -175,7 +174,7 @@ db.reviews.aggregate([
 ]
 ```
 
-#Q8 Average Review Scores by Property Type: What is the average review score for #each property type?
+# Q8 Average Review Scores by Property Type: What is the average review score for #each property type?
 ```
 [
   {
