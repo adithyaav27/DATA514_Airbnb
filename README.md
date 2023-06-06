@@ -55,7 +55,7 @@ db.reviews.aggregate([
 ])
 ```
 #Q6 Reminder to Book again: Are there any listings that have received more than #three reviews from the same reviewer within a month? Additionally, are there any #other listings by the same host that can be suggested? If so, please display the #listing's name, URL, description, host's name, reviewer's name, whether it was #previously booked, availability days, minimum nights for booking, and maximum #nights for booking. (Slightly modified from the actual query)
-
+```
 db.reviews.aggregate([
   {
     $group: {
@@ -136,11 +136,12 @@ db.reviews.aggregate([
     }
   }
 ])
+```
 
 #We’ve identified 2 other questions we would like to add. They are as follows:
 
 #Q7 Hosts with the Most Listings:Display the list of hosts with the most number #of listings.
-
+```
 [
   {
     $group:
@@ -172,10 +173,10 @@ db.reviews.aggregate([
       5,
   },
 ]
-
+```
 
 #Q8 Average Review Scores by Property Type: What is the average review score for #each property type?
-
+```
 [
   {
     $match:
@@ -215,3 +216,4 @@ db.reviews.aggregate([
       },
   },
 ]
+```
