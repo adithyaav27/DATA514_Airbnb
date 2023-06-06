@@ -10,7 +10,7 @@
 #Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in #Portland provide it’s availability estimate for each month of Spring and Winter #this year.
 
 #Q5 Booking Trend: For each city, how many reviews are received for December of #each year?
-'''
+```
 db.reviews.aggregate([
   {
     $project: {
@@ -53,7 +53,7 @@ db.reviews.aggregate([
      }
   }
 ])
-'''
+```
 #Q6 Reminder to Book again: Are there any listings that have received more than #three reviews from the same reviewer within a month? Additionally, are there any #other listings by the same host that can be suggested? If so, please display the #listing's name, URL, description, host's name, reviewer's name, whether it was #previously booked, availability days, minimum nights for booking, and maximum #nights for booking. (Slightly modified from the actual query)
 
 db.reviews.aggregate([
