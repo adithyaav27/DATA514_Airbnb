@@ -1,4 +1,5 @@
 # DATA514_Aribnb
+The following are the codes that we used to implement our system. A copy of the same can be found in code.txt file as well.
 
 ### Q1 AirBnB search: Display list of stays in Portland, OR with details: name, neighbourhood, room type, how many guests it accommodates, property type and amenities, per night’s cost and is available for the next two days in descending #order of rating. 
 
