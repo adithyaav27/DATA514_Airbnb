@@ -44,7 +44,7 @@ db.calendar.aggregate([
   }
 ])
 ```
-### Q2 Are there any neighbourhoods in any of the cities that don’t have any #listings?
+### Q2 Are there any neighbourhoods in any of the cities that don’t have any listings?
 ```
 db.neighborhoods.aggregate([
   {
@@ -69,12 +69,12 @@ db.neighborhoods.aggregate([
   }
 ])
 ```
-### Q3 Availability for booking: For “Entire home/apt” type listings in Salem #provide it’s availability estimate for each month – which chunks of time are bookable? Display listing’s name, whether it’s Entire home/apt, month, #availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
+### Q3 Availability for booking: For “Entire home/apt” type listings in Salem provide it’s availability estimate for each month – which chunks of time are bookable? Display listing’s name, whether it’s Entire home/apt, month, availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
 
 
-### Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in #Portland provide it’s availability estimate for each month of Spring and Winter this year.
+### Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in Portland provide it’s availability estimate for each month of Spring and Winter this year.
 
-### Q5 Booking Trend: For each city, how many reviews are received for December of #each year?
+### Q5 Booking Trend: For each city, how many reviews are received for December of each year?
 ```
 db.reviews.aggregate([
   {
@@ -204,7 +204,7 @@ db.reviews.aggregate([
 ```
 
 ## We’ve identified 2 other questions we would like to add. They are as follows:
-### Q7 Hosts with the Most Listings:Display the list of hosts with the most number #of listings.
+### Q7 Hosts with the Most Listings:Display the list of hosts with the most number of listings.
 ```
 [
   {
@@ -239,7 +239,7 @@ db.reviews.aggregate([
 ]
 ```
 
-### Q8 Average Review Scores by Property Type: What is the average review score for #each property type?
+### Q8 Average Review Scores by Property Type: What is the average review score for each property type?
 ```
 [
   {
