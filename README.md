@@ -2,9 +2,72 @@
 The following are the codes that we used to implement our system. A copy of the same can be found in code.txt file as well.
 
 ### Q1 AirBnB search: Display list of stays in Portland, OR with details: name, neighbourhood, room type, how many guests it accommodates, property type and amenities, per night’s cost and is available for the next two days in descending #order of rating. 
+db.calendar.aggregate([
+
+  {
+
+    $match: {
+      city: "Portland",
+      date: {
+        $gte: ISODate("2023-06-06T00:00:00Z"),
+        $lte: ISODate("2023-06-07T23:59:59Z")
+      },
+      available: true
+    }
+  },
+  {
+    $lookup: {
+      from: "listings",
+      localField: "listing_id",
+      foreignField: "id",
+      as: "listing"
+    }
+  },
+  {
+    $unwind: "$listing"
+  },
+  {
+    $sort: {
+      "listing.review_scores_rating": -1
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      name: "$listing.name",
+      neighbourhood: "$listing.neighbourhood_cleansed",
+      room_type: "$listing.room_type",
+      accommodates: "$listing.accommodates",
+      property_type: "$listing.property_type",
+      amenities: "$listing.amenities",
+      price: "$price"
+    }
+  }
+])
 
 ### Q2 Are there any neighbourhoods in any of the cities that don’t have any #listings?
-
+db.neighborhoods.aggregate([
+  {
+    $lookup: {
+      from: "listings",
+      localField: "neighbourhood",
+      foreignField: "neighbourhood_cleansed",
+      as: "listings"
+    }
+  },
+  {
+    $match: {
+      listings: { $eq: [] }
+    }
+  },
+  {
+    $project: {
+      _id: 0,
+      neighbourhood: "$neighbourhood",
+      city: "$city"
+    }
+  }
+])
 ### Q3 Availability for booking: For “Entire home/apt” type listings in Salem #provide it’s availability estimate for each month – which chunks of time are bookable? Display listing’s name, whether it’s Entire home/apt, month, #availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
 
 
