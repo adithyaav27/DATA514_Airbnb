@@ -70,10 +70,683 @@ db.neighborhoods.aggregate([
 ])
 ```
 ### Q3 Availability for booking: For “Entire home/apt” type listings in Salem provide it’s availability estimate for each month – which chunks of time are bookable? Display listing’s name, whether it’s Entire home/apt, month, availability “from – to” date/or just date if minimum nights is 1, and minimum #nights. 
-
-
+```
+debugger.Listings.aggregate(
+[
+  {
+    $match:
+      /**
+       * query: The query in MQL.
+       */
+      {
+        room_type: "Entire home/apt",
+        city: "Salem",
+      },
+  },
+  {
+    $lookup:
+      /**
+       * from: The target collection.
+       * localField: The local join field.
+       * foreignField: The target join field.
+       * as: The name for the results.
+       * pipeline: Optional pipeline to run on the foreign collection.
+       * let: Optional variables to use in the pipeline field stages.
+       */
+      {
+        from: "Calendar",
+        localField: "id",
+        foreignField: "listing_id",
+        as: "cal",
+      },
+  },
+  {
+    $unwind:
+      /**
+       * path: Path to the array field.
+       * includeArrayIndex: Optional name for index.
+       * preserveNullAndEmptyArrays: Optional
+       *   toggle to unwind null and empty values.
+       */
+      {
+        path: "$cal",
+      },
+  },
+  {
+    $addFields:
+      /**
+       * newField: The new field name.
+       * expression: The new field expression.
+       */
+      {
+        // Stage 4: Extract date components and add "Is Entire home/apt" field
+        month: {
+          $month: "$cal.date",
+        },
+        day: {
+          $dayOfMonth: "$cal.date",
+        },
+        year: {
+          $year: "$cal.date",
+        },
+        "Is Entire home/apt": "Yes",
+      },
+  },
+  {
+    $group:
+      /**
+       * _id: The id of the group.
+       * fieldN: The first field name.
+       */
+      {
+        // Stage 5: Group by name, "Is Entire home/apt", and month
+        _id: {
+          name: "$name",
+          "Is Entire home/apt":
+            "$Is Entire home/apt",
+          month: "$month",
+        },
+        availability: {
+          $push: {
+            date: "$cal.date",
+            available: "$cal.available",
+            minimum_nights: "$cal.minimum_nights",
+          },
+        },
+        minimum_nights: {
+          $min: "$cal.minimum_nights",
+        },
+      },
+  },
+  {
+    $addFields:
+      /**
+       * newField: The new field name.
+       * expression: The new field expression.
+       */
+      {
+        //Performs logic for determining availability
+        date_availability: {
+          $map: {
+            input: "$availability",
+            as: "item",
+            in: {
+              $cond: [
+                // Find a start date that is available
+                {
+                  $eq: ["$$item.available", true],
+                },
+                {
+                  $cond: [
+                    // If min nights is 1, store just that value
+                    {
+                      $eq: [
+                        "$$item.minimum_nights",
+                        1,
+                      ],
+                    },
+                    {
+                      date: {
+                        $dateToString: {
+                          date: "$$item.date",
+                          format: "%Y-%m-%d",
+                        },
+                      },
+                    },
+                    // so min nights > 1
+                    {
+                      $cond: [
+                        // (Check if range is large enough) and start/end dates are in the same month
+                        {
+                          $and: [
+                            {
+                              $eq: [
+                                //check that start and end date months are the same
+                                {
+                                  $month: {
+                                    $dateAdd: {
+                                      startDate:
+                                        "$$item.date",
+                                      unit: "day",
+                                      amount: {
+                                        $subtract:
+                                          [
+                                            "$$item.minimum_nights",
+                                            1,
+                                          ],
+                                      },
+                                    },
+                                  },
+                                },
+                                {
+                                  $month:
+                                    "$$item.date", // start day month
+                                },
+                              ],
+                            },
+                            {
+                              $eq: [
+                                {
+                                  $size: {
+                                    $filter: {
+                                      input: {
+                                        $range: [
+                                          {
+                                            $indexOfArray:
+                                              [
+                                                "$availability.date",
+                                                "$$item.date",
+                                              ],
+                                          },
+                                          {
+                                            $add: [
+                                              {
+                                                $indexOfArray:
+                                                  [
+                                                    "$availability.date",
+                                                    "$$item.date",
+                                                  ],
+                                              },
+                                              {
+                                                $subtract:
+                                                  [
+                                                    "$$item.minimum_nights",
+                                                    1,
+                                                  ],
+                                              },
+                                            ],
+                                          },
+                                        ],
+                                      },
+                                      as: "index",
+                                      cond: {
+                                        $eq: [
+                                          {
+                                            $arrayElemAt:
+                                              [
+                                                "$availability.available",
+                                                "$$index",
+                                              ],
+                                          },
+                                          true,
+                                        ],
+                                      },
+                                    },
+                                  },
+                                },
+                                {
+                                  $subtract: [
+                                    "$$item.minimum_nights",
+                                    1,
+                                  ],
+                                },
+                              ],
+                            },
+                          ],
+                        },
+                        {
+                          // Store date range
+                          date: {
+                            $concat: [
+                              {
+                                $dateToString: {
+                                  date: "$$item.date",
+                                  //start date
+                                  format:
+                                    "%Y-%m-%d",
+                                },
+                              },
+                              " - ",
+                              {
+                                $dateToString: {
+                                  date: {
+                                    //end date
+                                    $dateAdd: {
+                                      startDate:
+                                        "$$item.date",
+                                      unit: "day",
+                                      amount: {
+                                        $subtract:
+                                          [
+                                            "$$item.minimum_nights",
+                                            1,
+                                          ],
+                                      },
+                                    },
+                                  },
+                                  format:
+                                    "%Y-%m-%d",
+                                },
+                              },
+                            ],
+                          },
+                        },
+                        // Otherwise, do nothing
+                        null,
+                      ],
+                    },
+                  ],
+                },
+                // If start date isn't available, do nothing
+                null,
+              ],
+            },
+          },
+        },
+      },
+  },
+  {
+    $addFields:
+      /**
+       * newField: The new field name.
+       * expression: The new field expression.
+       */
+      {
+        //Remove null values from date_availability
+        date_availability: {
+          $filter: {
+            input: "$date_availability",
+            as: "item",
+            cond: {
+              $ne: ["$$item", null],
+            },
+          },
+        },
+      },
+  },
+  {
+    $project:
+      /**
+       * specifications: The fields to
+       *   include or exclude.
+       */
+      {
+        _id: 0,
+        name: "$_id.name",
+        "Is Entire home/apt":
+          "$_id.Is Entire home/apt",
+        month: "$_id.month",
+        minimum_nights: 1,
+        //availability: 0,
+        date_availability: 1,
+      },
+  },
+  {
+    $sort:
+      /**
+       * Provide any number of field/order pairs.
+       */
+      {
+        name: 1,
+        "Is Entire home/apt": -1,
+        month: 1,
+      },
+  },
+  {
+    $out:
+      /**
+       * Provide the name of the output collection.
+       */
+      "Results_1_2",
+  },
+]
+);
+```
 ### Q4 Booking trend for Spring v/s Winter: For “Entire home/apt” type listings in Portland provide it’s availability estimate for each month of Spring and Winter this year.
-
+```
+debugger.Listings.aggregate(
+  [
+    {
+      $match:
+        /**
+         * query: The query in MQL.
+         */
+        {
+          room_type: "Entire home/apt",
+          city: "Portland",
+        },
+    },
+    {
+      $match:
+        /**
+         * query: The query in MQL.
+         */
+        {
+          $expr: {
+            $and: [
+              {
+                $gte: [
+                  {
+                    $month: {
+                      $toDate: "$date",
+                    },
+                  },
+                  1,
+                ],
+              },
+              {
+                $lte: [
+                  {
+                    $month: {
+                      $toDate: "$date",
+                    },
+                  },
+                  6,
+                ],
+              },
+            ],
+          },
+        },
+    },
+    {
+      $lookup:
+        /**
+         * from: The target collection.
+         * localField: The local join field.
+         * foreignField: The target join field.
+         * as: The name for the results.
+         * pipeline: Optional pipeline to run on the foreign collection.
+         * let: Optional variables to use in the pipeline field stages.
+         */
+        {
+          from: "Calendar",
+          localField: "id",
+          foreignField: "listing_id",
+          as: "cal",
+        },
+    },
+    {
+      $unwind:
+        /**
+         * path: Path to the array field.
+         * includeArrayIndex: Optional name for index.
+         * preserveNullAndEmptyArrays: Optional
+         *   toggle to unwind null and empty values.
+         */
+        {
+          path: "$cal",
+        },
+    },
+    {
+      $addFields:
+        /**
+         * newField: The new field name.
+         * expression: The new field expression.
+         */
+        {
+          // Stage 4: Extract date components and add "Is Entire home/apt" field
+          month: {
+            $month: "$cal.date",
+          },
+          day: {
+            $dayOfMonth: "$cal.date",
+          },
+          year: {
+            $year: "$cal.date",
+          },
+          "Is Entire home/apt": "Yes",
+        },
+    },
+    {
+      $group:
+        /**
+         * _id: The id of the group.
+         * fieldN: The first field name.
+         */
+        {
+          // Stage 5: Group by name, "Is Entire home/apt", and month
+          _id: {
+            name: "$name",
+            "Is Entire home/apt":
+              "$Is Entire home/apt",
+            month: "$month",
+          },
+          availability: {
+            $push: {
+              date: "$cal.date",
+              available: "$cal.available",
+              minimum_nights: "$cal.minimum_nights",
+            },
+          },
+          minimum_nights: {
+            $min: "$cal.minimum_nights",
+          },
+        },
+    },
+    {
+      $addFields:
+        /**
+         * newField: The new field name.
+         * expression: The new field expression.
+         */
+        {
+          //Performs logic for determining availability
+          date_availability: {
+            $map: {
+              input: "$availability",
+              as: "item",
+              in: {
+                $cond: [
+                  // Find a start date that is available
+                  {
+                    $eq: ["$$item.available", true],
+                  },
+                  {
+                    $cond: [
+                      // If min nights is 1, store just that value
+                      {
+                        $eq: [
+                          "$$item.minimum_nights",
+                          1,
+                        ],
+                      },
+                      {
+                        date: {
+                          $dateToString: {
+                            date: "$$item.date",
+                            format: "%Y-%m-%d",
+                          },
+                        },
+                      },
+                      // so min nights > 1
+                      {
+                        $cond: [
+                          // (Check if range is large enough) and start/end dates are in the same month
+                          {
+                            $and: [
+                              {
+                                $eq: [
+                                  //check that start and end date months are the same
+                                  {
+                                    $month: {
+                                      $dateAdd: {
+                                        startDate:
+                                          "$$item.date",
+                                        unit: "day",
+                                        amount: {
+                                          $subtract:
+                                            [
+                                              "$$item.minimum_nights",
+                                              1,
+                                            ],
+                                        },
+                                      },
+                                    },
+                                  },
+                                  {
+                                    $month:
+                                      "$$item.date", // start day month
+                                  },
+                                ],
+                              },
+                              {
+                                $eq: [
+                                  {
+                                    $size: {
+                                      $filter: {
+                                        input: {
+                                          $range: [
+                                            {
+                                              $indexOfArray:
+                                                [
+                                                  "$availability.date",
+                                                  "$$item.date",
+                                                ],
+                                            },
+                                            {
+                                              $add: [
+                                                {
+                                                  $indexOfArray:
+                                                    [
+                                                      "$availability.date",
+                                                      "$$item.date",
+                                                    ],
+                                                },
+                                                {
+                                                  $subtract:
+                                                    [
+                                                      "$$item.minimum_nights",
+                                                      1,
+                                                    ],
+                                                },
+                                              ],
+                                            },
+                                          ],
+                                        },
+                                        as: "index",
+                                        cond: {
+                                          $eq: [
+                                            {
+                                              $arrayElemAt:
+                                                [
+                                                  "$availability.available",
+                                                  "$$index",
+                                                ],
+                                            },
+                                            true,
+                                          ],
+                                        },
+                                      },
+                                    },
+                                  },
+                                  {
+                                    $subtract: [
+                                      "$$item.minimum_nights",
+                                      1,
+                                    ],
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                          {
+                            // Store date range
+                            date: {
+                              $concat: [
+                                {
+                                  $dateToString: {
+                                    date: "$$item.date",
+                                    //start date
+                                    format:
+                                      "%Y-%m-%d",
+                                  },
+                                },
+                                " - ",
+                                {
+                                  $dateToString: {
+                                    date: {
+                                      //end date
+                                      $dateAdd: {
+                                        startDate:
+                                          "$$item.date",
+                                        unit: "day",
+                                        amount: {
+                                          $subtract:
+                                            [
+                                              "$$item.minimum_nights",
+                                              1,
+                                            ],
+                                        },
+                                      },
+                                    },
+                                    format:
+                                      "%Y-%m-%d",
+                                  },
+                                },
+                              ],
+                            },
+                          },
+                          // Otherwise, do nothing
+                          null,
+                        ],
+                      },
+                    ],
+                  },
+                  // If start date isn't available, do nothing
+                  null,
+                ],
+              },
+            },
+          },
+        },
+    },
+    {
+      $addFields:
+        /**
+         * newField: The new field name.
+         * expression: The new field expression.
+         */
+        {
+          //Remove null values from date_availability
+          date_availability: {
+            $filter: {
+              input: "$date_availability",
+              as: "item",
+              cond: {
+                $ne: ["$$item", null],
+              },
+            },
+          },
+        },
+    },
+    {
+      $project:
+        /**
+         * specifications: The fields to
+         *   include or exclude.
+         */
+        {
+          _id: 0,
+          name: "$_id.name",
+          "Is Entire home/apt":
+            "$_id.Is Entire home/apt",
+          month: "$_id.month",
+          minimum_nights: 1,
+          //availability: 0,
+          date_availability: 1,
+        },
+    },
+    {
+      $sort:
+        /**
+         * Provide any number of field/order pairs.
+         */
+        {
+          name: 1,
+          "Is Entire home/apt": -1,
+          month: 1,
+        },
+    },
+    {
+      $out:
+        /**
+         * Provide the name of the output collection.
+         */
+        "Results_2_1",
+    },
+  ]
+);
+```
 ### Q5 Booking Trend: For each city, how many reviews are received for December of each year?
 ```
 db.reviews.aggregate([
